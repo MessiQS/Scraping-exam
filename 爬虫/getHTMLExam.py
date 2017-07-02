@@ -12,20 +12,20 @@ def getContent(year, page, province):
 	url = "http://www.huatu.com/a/ztk/list/"+province+"/1/"+year+"/t/"+page+".html"
 	html = urlopen(url)
 	bsObj = BeautifulSoup(html)
-	divs = bsObj.findAll("div",{"class":"con_stAll_tg"})	
+	divs = bsObj.findAll("div",{"class":"con_stAll_tg"})
+	category_of_problem = ""
 	try:
 		for div in divs:
 			ps = div.findAll("p")
-			# p[0]单选多选
-			# p[1]题目
-			# p[2]A、
-			# p[2]B、
-			# p[3]C、
-			# p[4]D、
-			for p in ps:
-				# 如果p标签了有img标签
-				print(p.get_text())
+			# 处理p标签内容
+			# handleJSON(year, province, ps)
+			type_new = div.findPrevious('h5', {"class":"shitiCon01tit"})
+			#如果有新的类型
+			if !len(type_new):
+				category_of_problem = new_category_of_problem
 
+			handleJSON(year, province, ps, category_of_problem)
+			
 
 		title = bsObj.find("h4").get_text()
 	finally:
@@ -49,10 +49,65 @@ def getExamBy():
 		for year in years:
 			getExamWithProvinceAndYear(str(province), year)
 
+def handleJSON(year, province, psTag, category_of_problem): 
+	type_of_problem, number, analysis, recipe, expand = ""
+	
+	for p in ps:
+		# 如果p标签了有img标签
+		imgs = p.findAll("img")
+		if len(imgs):
+			for img in imgs:
+				print(img.get('src'))
+		#判断p的类型
+		#单选多选
+		if "单选题" in p.get_text():
+			type_of_problem = "单选题"
+		#题号
+		# if len(p.find("span"))
+		# 	number = p.find("span").get_text()
+		#题目
+		if "【解析】" in p.get_text():
+			analysis = p.get_text() 
+
+		if "【技巧】" in p.get_text():
+			recipe = p.get_text()
+
+		if "【拓展】" in p.get_text():
+			expand = p.get_text()
+
+	# p[0]单选多选,题号
+	# p[1]题目
+	# p[2]A、
+	# p[2]B、
+	# p[3]C、
+	# p[4]D、
+	question = ps[1].get_text()
+	option_A = ps[2].get_text()
+	option_B = ps[3].get_text()
+	option_C = ps[4].get_text()
+	option_D = ps[5].get_text()
+	answer = ps[6].get_text()
+
+	data = {
+		"year": year,
+		"province": province,
+		"type_of_problem":type_of_problem,
+		"number":number,
+	 	"category_of_problem":category_of_problem,
+		"question": question,
+		"option_A" : option_A,
+		"option_B" : option_B,
+		"option_C" : option_C,
+		"option_D" : option_D,
+		"answer" : answer,
+		"analysis": analysis,
+		"recipe" : recipe,
+		"expand": expand
+	}
+	return data
 
 
-getExamBy()
-
+getContent("2011", "18", "3")
 
 
 
