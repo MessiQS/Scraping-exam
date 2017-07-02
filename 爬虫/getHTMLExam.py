@@ -4,28 +4,27 @@ import re
 import time
 import random
 
-# conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', uset='root', passwd=None, db='mysql', charset='utf8')
-# cur = conn.cursor()
-# cur.execute("USE ")
+category_of_problem = ""
 
 def getContent(year, page, province):
+
+	global category_of_problem
 	url = "http://www.huatu.com/a/ztk/list/"+province+"/1/"+year+"/t/"+page+".html"
 	html = urlopen(url)
 	bsObj = BeautifulSoup(html)
 	divs = bsObj.findAll("div",{"class":"con_stAll_tg"})
-	category_of_problem = ""
+	
 	try:
 		for div in divs:
 			ps = div.findAll("p")
 			# 处理p标签内容
-			# handleJSON(year, province, ps)
-			type_new = div.findPrevious('h5', {"class":"shitiCon01tit"})
+			new_category_of_problem = div.findPrevious('h5', {"class":"shitiCon01tit"})
 			#如果有新的类型
-			if !len(type_new):
-				category_of_problem = new_category_of_problem
+			if new_category_of_problem:
+				category_of_problem = new_category_of_problem.get_text()
 
-			handleJSON(year, province, ps, category_of_problem)
-			
+			data = handleJSON(year, province, ps, category_of_problem)
+			print(data)
 
 		title = bsObj.find("h4").get_text()
 	finally:
@@ -49,22 +48,16 @@ def getExamBy():
 		for year in years:
 			getExamWithProvinceAndYear(str(province), year)
 
-def handleJSON(year, province, psTag, category_of_problem): 
-	type_of_problem, number, analysis, recipe, expand = ""
-	
+def handleJSON(year, province, ps, category_of_problem): 
+	type_of_problem = number = analysis = recipe = expand = ""
+	srcs = []
 	for p in ps:
 		# 如果p标签了有img标签
 		imgs = p.findAll("img")
 		if len(imgs):
 			for img in imgs:
-				print(img.get('src'))
-		#判断p的类型
-		#单选多选
-		if "单选题" in p.get_text():
-			type_of_problem = "单选题"
-		#题号
-		# if len(p.find("span"))
-		# 	number = p.find("span").get_text()
+				src = {img:img.get('src')}
+				srcs.append(src)
 		#题目
 		if "【解析】" in p.get_text():
 			analysis = p.get_text() 
@@ -81,7 +74,16 @@ def handleJSON(year, province, psTag, category_of_problem):
 	# p[2]B、
 	# p[3]C、
 	# p[4]D、
-	question = ps[1].get_text()
+
+	number = ps[0].find("span").get_text()
+
+	#单选多选
+	if "单选题" in ps[0].get_text():
+		type_of_problem = "单选题"
+	else:
+		type_of_problem = "多选题"
+
+	question = ps[1].contents#.get_text()
 	option_A = ps[2].get_text()
 	option_B = ps[3].get_text()
 	option_C = ps[4].get_text()
@@ -102,7 +104,8 @@ def handleJSON(year, province, psTag, category_of_problem):
 		"answer" : answer,
 		"analysis": analysis,
 		"recipe" : recipe,
-		"expand": expand
+		"expand": expand,
+		"srcs": srcs
 	}
 	return data
 
